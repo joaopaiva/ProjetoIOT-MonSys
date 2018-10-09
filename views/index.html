@@ -3,6 +3,42 @@
 
 <head>
 
+  <script>
+
+    function funcaoUmidade(){
+      
+    }
+
+    function funcaoTemperatura(){
+      if(document.getElementById("temperatura").innerHTML == "Ligar ventilador"){
+      document.getElementById("temperatura").innerHTML = "Desligar ventilador";
+      }
+      else if(document.getElementById("temperatura").innerHTML == "Desligar ventilador"){
+      document.getElementById("temperatura").innerHTML = "Ligar ventilador";
+      }
+    }
+
+    function funcaoLuminosidade(){
+      if(document.getElementById("luz").innerHTML == "Ligar luz"){
+      document.getElementById("luz").innerHTML = "Desligar luz";
+      }
+      else if(document.getElementById("luz").innerHTML == "Desligar luz"){
+      document.getElementById("luz").innerHTML = "Ligar luz";
+      }
+    }
+
+    function funcaoJanela() {
+      if(document.getElementById("janela").innerHTML == "Fechada"){
+      document.getElementById("janela").innerHTML = "Aberta";
+      document.getElementById("textJanela").innerHTML = "Fechar janela";
+      }
+      else if(document.getElementById("janela").innerHTML == "Aberta"){
+      document.getElementById("janela").innerHTML = "Fechada";
+      document.getElementById("textJanela").innerHTML = "Abrir janela";
+      }
+    }
+  </script>
+
   <meta charset="utf-8">
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
   <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
@@ -90,7 +126,7 @@
               </div>
               <a class="card-footer text-white clearfix small z-1" href="#">
                 <!--Botão-->
-                <span class="float-left">Ligar ventilador</span>
+                <span class="float-left" id="temperatura" onclick="funcaoTemperatura()">Ligar ventilador</span>
               </a>
             </div>
           </div>         
@@ -108,7 +144,7 @@
                 <br>
               </div>
               <a class="card-footer text-white clearfix small z-1" href="#">
-                <span class="float-left">Ligar luz</span>
+                <span class="float-left" id="luz" onclick="funcaoLuminosidade()">Ligar luz</span>
               </a>
             </div>
           </div>
@@ -121,12 +157,12 @@
                 <div class="mr-5">Janela</div>
                 <br>
                 <h1 id="sensorJan" >
-                  <font size="20">Aberta</font>
+                  <font size="20" id="janela">Fechada</font>
                 </h1>
                 <br>
               </div>
               <a class="card-footer text-white clearfix small z-1" href="#">
-                <span class="float-left">Abrir janela</span>
+                <span class="float-left" id="textJanela" onclick="funcaoJanela()">Abrir janela</span>
               </a>
             </div>
           </div>
