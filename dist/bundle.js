@@ -3314,6 +3314,7 @@ process.umask = function() { return 0; };
 }(this));
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
+
 },{}],10:[function(require,module,exports){
 // Copyright Joyent, Inc. and other Node contributors.
 //
@@ -3572,6 +3573,7 @@ exports.clearImmediate = typeof clearImmediate === "function" ? clearImmediate :
   delete immediateIds[id];
 };
 }).call(this,require("timers").setImmediate,require("timers").clearImmediate)
+
 },{"process/browser.js":8,"timers":13}],14:[function(require,module,exports){
 // Copyright Joyent, Inc. and other Node contributors.
 //
@@ -4921,153 +4923,230 @@ function hasOwnProperty(obj, prop) {
 }
 
 }).call(this,require('_process'),typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
+
 },{"./support/isBuffer":16,"_process":8,"inherits":6}],18:[function(require,module,exports){
+//Database
 var db = firebase.database()
 
-//colocar o listener de mudança no filho
+// VARIAVEIS DA JANELA
+var janela = document.getElementById('sensorJan');
+var btJanela = document.getElementById('btJanela');
+
+// VARIAVEIS DA TEMPERATURA
+var temperatura = document.getElementById('sensorTemp');
+var btTemp = document.getElementById('btTemp');
+
+// VARIAVEIS DA LUMINOSIDADE
+var luminosidade = document.getElementById('sensorLum');
+var btLum = document.getElementById('btLum');
+
+// VARIAVEIS DA UMIDADE
+var umidade = document.getElementById('sensorUm');
+
+// BOTAO DE LOGOUT
+var logOutButton = document.getElementById('logOutButton');
+
+//MQTT
 var mqtt = require('mqtt');
 var client = mqtt.connect('ws://broker.mqttdashboard.com:8000/mqtt');
 
-client.on("connect", function(){	
-    client.subscribe('monsys/estadoJanela')
-    console.log("connected and sending message!");
 
-    client.publish('monsys/estadoJanela', 'ab')
-})
+firebase.auth().onAuthStateChanged(function (user) {
+    if (user) {
+        // User is signed in.
+        var uid = user.uid;
+        console.log(String(uid))
+        /* document.cookie = "user="+uid+"; path=/"; */
 
-client.on('message', (topic, message) => {
-    switch(topic){
-        case 'monsys/estadoJanela':
-            console.log('received message %s %s', topic, message)
+
+        client.on("connect", function () {
+            client.subscribe('monsys/estadoJanela')
+            client.subscribe('monsys/estadoTemperatura')
+            client.subscribe('monsys/estadoLuminosidade')
+            client.subscribe('monsys/estadoUmidade')
+            console.log("connected");
+        })
+
+        client.on('message', (topic, message) => {
+
+            switch (topic) {
+                case 'monsys/estadoJanela':
+                    if (message.toString() == "JF") //Janela Fechada
+                        createJan('Fechada')
+                    else if (message.toString() == "JA")
+                        createJan('Aberta')
+                    break
+                case 'monsys/estadoTemperatura':
+                    if (message.toString().endsWith('VD')) //Ventilador Desligado
+                        createTemp(message)
+                    else if (message.toString().endsWith('VL'))
+                        createTemp(message)
+                    break
+                case 'monsys/estadoLuminosidade':
+                    if (message.toString().endsWith('LD')) //Lampada Desligada
+                        createLum(message)
+                    else if (message.toString().endsWith('LL'))
+                        createLum(message)
+                    break
+                case 'monsys/estadoUmidade':
+                    createUmidade(message)
+                    break
+            }
+        })
+
+
+        //JANELA
+        btJanela.addEventListener('click', function () {
+
+            if (btJanela.innerText == "Abrir Janela") {
+                client.publish('monsys/estadoJanela', 'AJ') //Abrir Janela
+            } else {
+                client.publish('monsys/estadoJanela', 'FJ')
+            }
+        });
+
+        function createJan(estado) {
+            var data = {
+                estado: estado,
+                time: Date.now()
+            }
+
+            return db.ref().child('usuarios/'+uid+'/dados/janela').push(data);
+        }
+
+        // ESTADO DA JANELA
+        db.ref('usuarios/'+uid+'/dados/janela').on('child_added', function (snapshot) {
+
+            var estadoJanela = snapshot.val().estado
+
+            if (estadoJanela == "Aberta") {
+                janela.innerHTML = "Aberta"
+                btJanela.innerHTML = "Fechar Janela"
+                $('#ledJanela').toggleClass('led led-green')
+            } else if (estadoJanela == "Fechada") {
+                janela.innerHTML = "Fechada"
+                btJanela.innerHTML = "Abrir Janela"
+                $('#ledJanela').toggleClass('led led-red')
+            }
+        })
+
+
+        //TEMPERATURA
+        btTemp.addEventListener('click', function () {
+
+            if (btTemp.innerText == "Ligar Ventilador") {
+                client.publish('monsys/estadoVentilador', 'LV') //Ligar Ventilador
+            } else {
+                client.publish('monsys/estadoVentilador', 'DV')
+            }
+
+        });
+
+        function createTemp(message) {
+
+            var splittedMessage = String(message).split("/");
+            var estado = splittedMessage[1] == 'VD' ? 'Desligado' : 'Ligado'
+            var valor = splittedMessage[0]
+
+            var data = {
+                estado: estado,
+                valor: valor,
+                time: Date.now()
+            }
+
+            return db.ref().child('usuarios/'+uid+'/dados/temperatura').push(data);
+        }
+
+        //ESTADO DA TEMPERATURA
+        db.ref('usuarios/'+uid+'/dados/temperatura').on('child_added', function (snapshot) {
+
+            var estadoVentilador = snapshot.val().estado
+            temperatura.innerHTML = snapshot.val().valor + "ºC";
+
+            if (estadoVentilador == "Ligado") {
+                btTemp.innerHTML = "Desligar Ventilador"
+                $('#ledVentilador').toggleClass('led led-green')
+            } else if (estadoVentilador == "Desligado") {
+                btTemp.innerHTML = "Ligar Ventilador"
+                $('#ledVentilador').toggleClass('led led-red')
+            }
+        })
+
+        // LUMINOSIDADE
+        btLum.addEventListener('click', function () {
+
+            if (btLum.innerText == "Ligar Lâmpada") {
+                client.publish('monsys/estadoVentilador', 'LLA') //Ligar Lampada
+            } else {
+                client.publish('monsys/estadoVentilador', 'DL')
+            }
+        });
+
+        function createLum(message) {
+
+            var splittedMessage = String(message).split("/");
+            var estado = splittedMessage[1] == 'LD' ? 'Desligado' : 'Ligado'
+            var valor = splittedMessage[0]
+
+            var data = {
+                estado: estado,
+                valor: valor,
+                time: Date.now()
+            }
+
+            return db.ref().child('usuarios/'+uid+'/dados/luminosidade').push(data);
+        }
+
+        //ESTADO DA LUMINOSIDADE
+        db.ref('usuarios/'+uid+'/dados/luminosidade').on('child_added', function (snapshot) {
+
+            var estadoLuz = snapshot.val().estado
+            luminosidade.innerHTML = snapshot.val().valor + "%";
+
+            if (estadoLuz == "Ligado") {
+                btLum.innerHTML = "Desligar Lâmpada"
+                $('#ledLampada').toggleClass('led-green led')
+            } else if (estadoLuz == "Desligado") {
+                btLum.innerHTML = "Ligar Lâmpada"
+                $('#ledLampada').toggleClass('led-red led')
+            }
+        })
+
+        // UMIDADE
+        function createUmidade(valor) {
+            var data = {
+                valor: valor.toString(),
+                time: Date.now()
+            }
+
+            return db.ref().child('usuarios/'+uid+'/dados/umidade').push(data);
+        }
+
+        //ESTADO DA UMIDADE
+        db.ref('usuarios/'+uid+'/dados/umidade').on('child_added', function (snapshot) {
+
+            umidade.innerHTML = snapshot.val().valor + "%"
+
+        })
+
+        // Logout
+        logOutButton.addEventListener('click', function () {
+            firebase
+                .auth()
+                .signOut()
+                .then(function () {
+                    alert('Você se deslogou');
+                    window.location = 'login.html';
+                }, function (error) {
+                    console.error(error);
+                });
+        });
+
+    } else {
+        console.log('Usario deslogado!')
+        window.location = 'login.html'
     }
-    
-    console.log('Opening window')
-})
-
-document.getElementById('sensorUm').innerHTML = 'Teste';
-
-// JANELA
-var janela = document.getElementById('sensorJan');
-var btJanela = document.getElementById('btJanela');
-var btJanelaText = document.getElementById('btJanelaText');
-
-btJanela.addEventListener('click', function(){
-    createJan('Aberta');
 });
-
-function createJan(estado){
-    var data = {
-        estado: estado,
-        time: Date.now()
-    }
-
-    return db.ref().child('usuarios/dados/janela').push(data);
-}
-
-// ESTADO DA JANELA
-db.ref('usuarios/dados/janela').on('child_added', function(snapshot){
-    
-    janela.innerHTML = snapshot.val().estado
-
-    if(janela.innerText == "Aberta"){
-        btJanelaText.innerHTML = "Fechar Janela"
-    }
-    else if(janela.innerText == "Fechada"){
-        btJanelaText.innerHTML = "Abrir Janela"
-    }
-})
-
-
-// TEMPERATURA
-var temperatura = document.getElementById('sensorTemp');
-var btTemp = document.getElementById('btTemp');
-var btTempText = document.getElementById('btTempText');
-var valorTemp = 40;
-var estadoVentilador = 'Ligado';
-
-btTemp.addEventListener('click', function(){
-    createTemp(valorTemp, estadoVentilador);
-});
-
-function createTemp(valor,estado){
-    var data = {
-        estado: estado,
-        valor: valor,
-        time: Date.now()
-    }
-
-    return db.ref().child('usuarios/dados/temperatura').push(data);
-}
-
-//ESTADO DA TEMPERATURA
-db.ref('usuarios/dados/temperatura').on('child_added', function(snapshot){
-
-    estadoVentilador = snapshot.val().estado
-
-    if(estadoVentilador == "Ligado"){
-        temperatura.innerHTML = snapshot.val().valor;
-        btTempText.innerHTML = "Desligar Ventilador"
-    }
-    else if(estadoVentilador == "Desligado"){
-        temperatura.innerHTML = snapshot.val().valor;
-        btTempText.innerHTML = "Ligar Ventilador"
-    }
-})
-
-// UMIDADE
-var umidade = document.getElementById('sensorUm');
-
-function createUmidade(valor){
-    var data = {
-        valor: valor,
-        time: Date.now()
-    }
-
-    return db.ref().child('usuarios/dados/umidade').push(data);
-}
-
-//ESTADO DA UMIDADE
-db.ref('usuarios/dados/umidade').on('child_added', function(snapshot){
-    
-    umidade.innerHTML = snapshot.val().umidade
-
-})
-
-// LUMINOSIDADE
-var luminosidade = document.getElementById('sensorLum');
-var btLum = document.getElementById('btLum');
-var btLumText = document.getElementById('btLumText');
-var valorLum = 30;
-var estadoLuz = 'Desligado';
-
-btLum.addEventListener('click', function(){
-    createLum(valorLum, estadoLuz);
-});
-
-function createLum(valor,estado){
-    var data = {
-        estado: estado,
-        valor: valor,
-        time: Date.now()
-    }
-
-    return db.ref().child('usuarios/dados/luminosidade').push(data);
-}
-
-//ESTADO DA LUMINOSIDADE
-db.ref('usuarios/dados/luminosidade').on('child_added', function(snapshot){
-    
-    estadoLuz.innerHTML = snapshot.val().estado
-
-    if(estadoLuz == "Ligado"){
-        luminosidade.innerHTML = snapshot.val().valor;
-        btLumText.innerHTML = "Desligar Ventilador"
-    }
-    else if(estadoLuz == "Desligado"){
-        luminosidade.innerHTML = snapshot.val().valor;
-        btLumText.innerHTML = "Ligar Ventilador"
-    }
-})
 },{"mqtt":94}],19:[function(require,module,exports){
 var DuplexStream = require('readable-stream/duplex')
   , util         = require('util')
@@ -5461,8 +5540,9 @@ function objectToString(o) {
   return Object.prototype.toString.call(o);
 }
 
-}).call(this,{"isBuffer":require("../../../../../AppData/Roaming/npm/node_modules/watchify/node_modules/is-buffer/index.js")})
-},{"../../../../../AppData/Roaming/npm/node_modules/watchify/node_modules/is-buffer/index.js":7}],21:[function(require,module,exports){
+}).call(this,{"isBuffer":require("../../../../../AppData/Roaming/npm/node_modules/browserify/node_modules/is-buffer/index.js")})
+
+},{"../../../../../AppData/Roaming/npm/node_modules/browserify/node_modules/is-buffer/index.js":7}],21:[function(require,module,exports){
 'use strict';
 
 var copy             = require('es5-ext/object/copy')
@@ -5799,6 +5879,7 @@ Duplexify.prototype.end = function(data, enc, cb) {
 module.exports = Duplexify
 
 }).call(this,require('_process'),require("buffer").Buffer)
+
 },{"_process":8,"buffer":3,"end-of-stream":24,"inherits":85,"readable-stream":114,"stream-shift":117}],24:[function(require,module,exports){
 var once = require('once');
 
@@ -9703,6 +9784,7 @@ MqttClient.prototype.getLastMessageId = function () {
 module.exports = MqttClient
 
 }).call(this,require('_process'),typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
+
 },{"./store":99,"./validations":100,"_process":8,"end-of-stream":101,"events":4,"inherits":85,"mqtt-packet":88,"readable-stream":114,"reinterval":115,"xtend":123}],94:[function(require,module,exports){
 (function (process){
 'use strict'
@@ -9856,6 +9938,7 @@ module.exports.MqttClient = MqttClient
 module.exports.Store = Store
 
 }).call(this,require('_process'))
+
 },{"../client":93,"../store":99,"./tcp":95,"./tls":96,"./ws":97,"./wx":98,"_process":8,"url":14,"xtend":123}],95:[function(require,module,exports){
 'use strict'
 var net = require('net')
@@ -10016,6 +10099,7 @@ if (IS_BROWSER) {
 }
 
 }).call(this,require('_process'))
+
 },{"_process":8,"url":14,"websocket-stream":120}],98:[function(require,module,exports){
 'use strict'
 
@@ -10272,6 +10356,7 @@ Store.prototype.close = function (cb) {
 module.exports = Store
 
 }).call(this,require('_process'))
+
 },{"_process":8,"es6-map":73,"readable-stream":114,"xtend":123}],100:[function(require,module,exports){
 'use strict'
 
@@ -10420,6 +10505,7 @@ function nextTick(fn, arg1, arg2, arg3) {
 
 
 }).call(this,require('_process'))
+
 },{"_process":8}],104:[function(require,module,exports){
 module.exports = require('./lib/_stream_duplex.js');
 
@@ -11625,6 +11711,7 @@ function indexOf(xs, x) {
   return -1;
 }
 }).call(this,require('_process'),typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
+
 },{"./_stream_duplex":105,"./internal/streams/BufferList":110,"./internal/streams/destroy":111,"./internal/streams/stream":112,"_process":8,"core-util-is":20,"events":4,"inherits":85,"isarray":113,"process-nextick-args":103,"safe-buffer":116,"string_decoder/":118,"util":2}],108:[function(require,module,exports){
 // Copyright Joyent, Inc. and other Node contributors.
 //
@@ -12530,6 +12617,7 @@ Writable.prototype._destroy = function (err, cb) {
   cb(err);
 };
 }).call(this,require('_process'),typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("timers").setImmediate)
+
 },{"./_stream_duplex":105,"./internal/streams/destroy":111,"./internal/streams/stream":112,"_process":8,"core-util-is":20,"inherits":85,"process-nextick-args":103,"safe-buffer":116,"timers":13,"util-deprecate":119}],110:[function(require,module,exports){
 'use strict';
 
@@ -13217,6 +13305,7 @@ function config (name) {
 }
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
+
 },{}],120:[function(require,module,exports){
 (function (process,global){
 'use strict'
@@ -13390,6 +13479,7 @@ function WebSocketStream(target, protocols, options) {
 }
 
 }).call(this,require('_process'),typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
+
 },{"_process":8,"duplexify":23,"readable-stream":114,"safe-buffer":116,"ws":121}],121:[function(require,module,exports){
 
 var ws = null
@@ -13460,4 +13550,5 @@ function extend() {
     return target
 }
 
-},{}]},{},[18]);
+},{}]},{},[18])
+//# sourceMappingURL=bundle.map.js

@@ -22,6 +22,7 @@
 
   <!-- Custom styles for this template-->
   <link href="css/sb-admin.css" rel="stylesheet">
+  <link href="css/led.css" rel="stylesheet">
 
 </head>
 
@@ -42,10 +43,10 @@
           <i class="fas fa-user-circle fa-fw"></i>
         </a>
         <div class="dropdown-menu dropdown-menu-right" aria-labelledby="userDropdown">
-          <a class="dropdown-item" href="#">Settings</a>
+          <!-- <a class="dropdown-item" href="#">Settings</a>
           <a class="dropdown-item" href="#">Activity Log</a>
-          <div class="dropdown-divider"></div>
-          <a class="dropdown-item" href="#" data-toggle="modal" data-target="#logoutModal">Logout</a>
+          <div class="dropdown-divider"></div> -->
+          <a class="dropdown-item" data-toggle="modal" href="#" data-target="#logoutModal">Sair</a>
         </div>
       </li>
     </ul>
@@ -88,10 +89,7 @@
                 </h1>
                 <br>
               </div>
-              <a id="btTemp"class="card-footer text-white clearfix small z-1" href="#">
-                <!--Botão-->
-                <span id="btTempText" class="float-left"></span> <!-- Texto no botão de temperatura -->
-              </a>
+              <a id="btTemp" class="card-footer text-white clearfix small z-1 btn btn-primary" role="button"></a>
             </div>
           </div>         
           <div class="col-xl-3 col-sm-6 mb-3">
@@ -102,14 +100,12 @@
                 </div>
                 <div class="mr-5">Luminosidade</div>
                 <br>
-                <h1 id="sensorLum">
-                  <font size="20">...</font> <!-- Valor da luminosidade -->
-                </h1>
+                  <h1>
+                    <font id="sensorLum" size="20">...</font> <!-- Valor da luminosidade -->
+                  </h1>
                 <br>
               </div>
-              <a id="btLum"class="card-footer text-white clearfix small z-1" href="#">
-                <span id="btLumText"class="float-left"></span> <!-- Texto no botão lumin -->
-              </a>
+              <a id="btLum" class="card-footer text-white clearfix small z-1 btn btn-success" role="button"></a>
             </div>
           </div>
           <div class="col-xl-3 col-sm-6 mb-3">
@@ -125,9 +121,7 @@
                 </h1>
                 <br>
               </div>
-              <a id="btJanela" class="card-footer text-white clearfix small z-1" href="#">
-                <span id="btJanelaText" class="float-left"></span> <!-- Texto do botão janela-->
-              </a>
+              <a id="btJanela" class="card-footer text-white clearfix small z-1 btn btn-danger" role="button"></a>
             </div>
           </div>
           <div class="col-xl-3 col-sm-6 mb-3">
@@ -138,15 +132,19 @@
                 </div>
                 <div class="mr-5">Umidade</div>
                 <br>
-                <h1 id="sensorUm" >
-                  <font size="20">...</font>
+                <h1>
+                  <font id="sensorUm" size="20">...</font>
                 </h1>
                 <br>
               </div>
             </div>
           </div>
         </div>
-
+        <div class="row">
+          <div class="led led-red" id="ledVentilador"></div>
+          <div class="led led-red" id="ledLampada"></div>
+          <div class="led led-red" id="ledJanela"></div>
+        </div>
 
         <!-- Sticky Footer -->
         <footer class="sticky-footer">
@@ -173,15 +171,16 @@
       <div class="modal-dialog" role="document">
         <div class="modal-content">
           <div class="modal-header">
-            <h5 class="modal-title" id="exampleModalLabel">Ready to Leave?</h5>
+            <h5 class="modal-title" id="exampleModalLabel">Tem certeza que deseja sair?</h5>
             <button class="close" type="button" data-dismiss="modal" aria-label="Close">
               <span aria-hidden="true">×</span>
             </button>
           </div>
-          <div class="modal-body">Select "Logout" below if you are ready to end your current session.</div>
+          <div class="modal-body">
+            Selecione "Sair" abaixo se você estiver pronto para terminar sua sessão atual.</div>
           <div class="modal-footer">
             <button class="btn btn-secondary" type="button" data-dismiss="modal">Cancel</button>
-            <a class="btn btn-primary" href="login.html">Logout</a>
+            <a class="btn btn-primary" id="logOutButton">Sair</a>
           </div>
         </div>
       </div>
@@ -207,9 +206,10 @@
 
     <!-- Firebase -->
     <script src="https://www.gstatic.com/firebasejs/5.5.4/firebase.js"></script>
-    <script src='app.js'></script>
+    <script src='dist/app.js'></script>
 
     <script src='dist/bundle.js'></script>
+
 </body>
 
 </html>
