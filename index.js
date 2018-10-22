@@ -21,16 +21,15 @@ var logOutButton = document.getElementById('logOutButton');
 
 //MQTT
 var mqtt = require('mqtt');
-var client = mqtt.connect('ws://broker.mqttdashboard.com:8000/mqtt');
+var client = mqtt.connect('wss://iot.eclipse.org:443/ws');
 
+client.reconnect()
 
 firebase.auth().onAuthStateChanged(function (user) {
     if (user) {
         // User is signed in.
         var uid = user.uid;
         console.log(String(uid))
-        /* document.cookie = "user="+uid+"; path=/"; */
-
 
         client.on("connect", function () {
             client.subscribe('monsys/estadoJanela')
@@ -67,6 +66,17 @@ firebase.auth().onAuthStateChanged(function (user) {
             }
         })
 
+        client.on('offline', function(){
+            console.log("offline")
+        })
+
+        client.on('error', function(){
+            console.log("error to connect")
+        })
+
+        client.on('reconnect', function(){
+            console.log("reconnecting")
+        })
 
         //JANELA
         btJanela.addEventListener('click', function () {
@@ -95,11 +105,13 @@ firebase.auth().onAuthStateChanged(function (user) {
             if (estadoJanela == "Aberta") {
                 janela.innerHTML = "Aberta"
                 btJanela.innerHTML = "Fechar Janela"
-                $('#ledJanela').toggleClass('led led-green')
+                $('#ledJanela').removeClass()
+                $('#ledJanela').addClass('led led-green')
             } else if (estadoJanela == "Fechada") {
                 janela.innerHTML = "Fechada"
                 btJanela.innerHTML = "Abrir Janela"
-                $('#ledJanela').toggleClass('led led-red')
+                $('#ledJanela').removeClass()
+                $('#ledJanela').addClass('led led-red')
             }
         })
 
@@ -138,10 +150,12 @@ firebase.auth().onAuthStateChanged(function (user) {
 
             if (estadoVentilador == "Ligado") {
                 btTemp.innerHTML = "Desligar Ventilador"
-                $('#ledVentilador').toggleClass('led led-green')
+                $('#ledVentilador').removeClass()
+                $('#ledVentilador').addClass('led led-green')
             } else if (estadoVentilador == "Desligado") {
                 btTemp.innerHTML = "Ligar Ventilador"
-                $('#ledVentilador').toggleClass('led led-red')
+                $('#ledVentilador').removeClass()
+                $('#ledVentilador').addClass('led led-red')
             }
         })
 
@@ -178,10 +192,12 @@ firebase.auth().onAuthStateChanged(function (user) {
 
             if (estadoLuz == "Ligado") {
                 btLum.innerHTML = "Desligar Lâmpada"
-                $('#ledLampada').toggleClass('led-green led')
+                $('#ledLampada').removeClass()
+                $('#ledLampada').addClass('led led-green')
             } else if (estadoLuz == "Desligado") {
                 btLum.innerHTML = "Ligar Lâmpada"
-                $('#ledLampada').toggleClass('led-red led')
+                $('#ledLampada').removeClass()
+                $('#ledLampada').addClass('led led-red')
             }
         })
 
@@ -208,7 +224,6 @@ firebase.auth().onAuthStateChanged(function (user) {
                 .auth()
                 .signOut()
                 .then(function () {
-                    alert('Você se deslogou');
                     window.location = 'login.html';
                 }, function (error) {
                     console.error(error);
@@ -216,7 +231,6 @@ firebase.auth().onAuthStateChanged(function (user) {
         });
 
     } else {
-        console.log('Usario deslogado!')
         window.location = 'login.html'
     }
 });
